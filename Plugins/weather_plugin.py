@@ -23,7 +23,7 @@ class WeatherPlugin:
     FORECAST_ENDPOINT = f"{BASE}/forecast?"
     API_KEY = os.getenv("OPEN_WEATHER_MAP_API_KEY")
     
-    async def get_low_and_high(self, city: str) -> tuple[int, int]:
+    async def get_low_and_high(self, city: str) -> (tuple[int, int] | tuple[None, None]):
         async with AsyncClient() as client:
             response = await client.get(WeatherPlugin.FORECAST_ENDPOINT + f"q={city}&appid={WeatherPlugin.API_KEY}&units=imperial")
             data = response.json()
@@ -41,6 +41,9 @@ class WeatherPlugin:
             
             if local_time.strftime("%Y-%m-%d") == today:
                 today_temps.append(entry["main"]["temp"])
+                
+        if not today_temps:
+            return (None, None)
                 
         return (int(min(today_temps)), int(max(today_temps)))
     

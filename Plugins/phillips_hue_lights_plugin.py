@@ -42,7 +42,7 @@ class LightsPlugin:
         return self.lights
     
     @kernel_function
-    async def get_light_state(self, id: Annotated[int, "The Id of the light"]) -> Optional[LightModel]:
+    async def get_light_state(self, id: Annotated[str, "The Id of the light"]) -> Optional[LightModel]:
         """Gets the state of a particular light."""
         for light in self.lights:
             if id == light["id"]:
@@ -50,7 +50,7 @@ class LightsPlugin:
         return None
     
     @kernel_function
-    async def change_light_state(self, id: Annotated[int, "The Id of the light"], new_light_state: LightModel) -> Optional[LightModel | HTTPError]:
+    async def change_light_state(self, id: Annotated[str, "The Id of the light"], new_light_state: LightModel) -> Optional[LightModel | HTTPError]:
         """Changes the state of an individual light."""
         for light in self.lights:
             if light["id"] == id:
@@ -62,7 +62,7 @@ class LightsPlugin:
         return None
     
     @kernel_function
-    async def change_group_state(self, id: Annotated[int, "The Id of the group"], new_group_state: GroupModel) -> Optional[GroupModel | HTTPError]:
+    async def change_group_state(self, id: Annotated[str, "The Id of the group"], new_group_state: GroupModel) -> Optional[GroupModel | HTTPError]:
         """Changes the state of an individual light."""
         for group in self.groups:
             if group["id"] == id:
@@ -89,12 +89,11 @@ class LightsPlugin:
                 response = await client.put(url, headers=LightsPlugin.HEADERS, json=payload)
             
             response.raise_for_status()
-            
             return new_light_state
         except HTTPError as e:
             return e
-        
-        
+
+
     async def _change_group(self, new_group_state: GroupModel) -> (GroupModel | HTTPError):
         """Actually changes the group's state using the Phillips Hue API."""
         url = f"{LightsPlugin.BASE_URL}/grouped_light/{new_group_state["id"]}"
@@ -106,9 +105,8 @@ class LightsPlugin:
         try:
             async with AsyncClient(verify=False) as client:
                 response = await client.put(url, headers=LightsPlugin.HEADERS, json=payload)
-            
+
             response.raise_for_status()
-            
             return new_group_state
         except HTTPError as e:
             return e
