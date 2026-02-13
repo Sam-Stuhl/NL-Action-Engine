@@ -1,5 +1,7 @@
 .env
+__pycache__/
+.venv
 
 api_testing.ipynb
 
-__pycache__/
+testing-resources

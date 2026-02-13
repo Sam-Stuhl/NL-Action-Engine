@@ -1,3 +1,11 @@
 semantic-kernel
+
+# Api integrations
 openai
 python-weather
+
+# Audio Manager
+openai-whisper
+pyaudio
+keyboard
+openwakeword
