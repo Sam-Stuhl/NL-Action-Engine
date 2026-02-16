@@ -4,6 +4,9 @@ from semantic_kernel.connectors.ai.function_choice_behavior import FunctionChoic
 from semantic_kernel.contents.chat_history import ChatHistory
 from semantic_kernel.connectors.ai.open_ai.prompt_execution_settings.azure_chat_prompt_execution_settings import AzureChatPromptExecutionSettings
 import logging
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from plugins.weather_plugin import WeatherPlugin
 from plugins.phillips_hue_lights_plugin import LightsPlugin
@@ -17,6 +20,12 @@ class SKManager:
         
         self.kernel.add_service(self.chat_completion)
         
+        # Enable Planning
+        self.execution_setting = AzureChatPromptExecutionSettings()
+        self.execution_setting.function_choice_behavior = FunctionChoiceBehavior.Auto()
+        
+        self.history = ChatHistory()
+        
         self.init_plugins()
     
     def init_plugins(self) -> None:
@@ -28,32 +37,32 @@ class SKManager:
                 )
         except Exception as e:
             raise e
+        
+    async def make_user_request(self, user_message: str):
+        self.history.add_user_message(user_message)
+
+        result = await self.chat_completion.get_chat_message_content(
+            chat_history=self.history,
+            settings=self.execution_setting,
+            kernel=self.kernel
+        )
+        
+        self.history.add_assistant_message(str(result))
+        
+        return result
                 
-    async def start_chat(self, is_logging_on: bool = False) -> None:
+    async def start_simple_chat(self, is_logging_on: bool = False) -> None:
         if is_logging_on:
             logging.basicConfig(level=logging.DEBUG)
-        
-        # Enable Planning
-        execution_setting = AzureChatPromptExecutionSettings()
-        execution_setting.function_choice_behavior = FunctionChoiceBehavior.Auto()
-        
-        history = ChatHistory()
         
         while True:
             user_message = input("Type a request or say 'exit' to end the chat > ")
             if user_message.lower() == "exit":
                 print("Exiting the chat. Goodbye!")
                 break
-
-            history.add_user_message(user_message)
-
-            result = await self.chat_completion.get_chat_message_content(
-                chat_history=history,
-                settings=execution_setting,
-                kernel=self.kernel
-            )
             
-            history.add_assistant_message(str(result))
+            result = await self.make_user_request(user_message)
+            
             print("Assistant > " + str(result))
             
             
@@ -76,6 +85,6 @@ if __name__ == "__main__":
     skm = SKManager(plugins)
     
     async def main():
-        await skm.start_chat()
+        await skm.start_simple_chat()
         
     asyncio.run(main())

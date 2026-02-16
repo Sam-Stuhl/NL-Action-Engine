@@ -11,6 +11,7 @@ from datetime import datetime
 import tempfile
 import os
 import whisper
+import subprocess
 
 class AudioManager:
     FORMAT = paInt16
@@ -23,7 +24,7 @@ class AudioManager:
         wakeword_model_path: str, 
         whisper_model_name: str,
         enable_noise_suppression: bool = False,
-        vad_threshold: float = 0.5, 
+        vad_threshold: float = 0.75, 
         inference_framework: str = "onnx",
     ):
         self.audio = PyAudio()
@@ -47,8 +48,9 @@ class AudioManager:
         
         # Init whisper model
         self.whisper_model = whisper.load_model(whisper_model_name)
+
         
-    def start_audio_chat(self):
+    def live_transcribing_with_wake_word(self):
         last_save = time.time()
         activation_times = collections.defaultdict(list)
         
@@ -74,12 +76,19 @@ class AudioManager:
                 print("Here's your transcript:\n  "  + result['text'])
                 
                 
-                
+    def get_audio_after_wake_word(self) -> str:
+        frames = self.record_audio()
+        tmp = self.save_temp_wav_file(frames)
+        
+        result = whisper.transcribe(self.whisper_model, tmp, fp16=False)
+        os.remove(tmp)
+        
+        return result['text']
                 
         
     def detect_wake_word(self, mic_audio, last_save, activation_times) -> tuple[bool, float, collections.defaultdict]:    
-        cooldown = 4
-        save_delay = 1
+        cooldown = 2.5
+        save_delay = 0.1
             
         # Feed to openWakeWord model
         prediction = self.owwModel.predict(mic_audio)
@@ -146,6 +155,12 @@ class AudioManager:
         self.stop()
         
         self.frames_to_wav(frames)
+        
+    def tts_response(self, text: str):
+        self.stream.stop_stream()
+        subprocess.run(["say", text])
+        self.stream.start_stream()
+        self.owwModel.reset()
         
     def frames_to_wav(self, frames: list, output_filename) -> None:
         waveFile = wave.open(output_filename, 'wb')

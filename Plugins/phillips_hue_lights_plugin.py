@@ -51,7 +51,7 @@ class LightsPlugin:
     
     @kernel_function
     async def change_light_state(self, id: Annotated[str, "The Id of the light"], new_light_state: LightModel) -> Optional[LightModel | HTTPError]:
-        """Changes the state of an individual light."""
+        """Changes the state of an individual light. Use x and y values to change color."""
         for light in self.lights:
             if light["id"] == id:
                 light["is_on"] = new_light_state.get("is_on", light["is_on"])
@@ -63,7 +63,7 @@ class LightsPlugin:
     
     @kernel_function
     async def change_group_state(self, id: Annotated[str, "The Id of the group"], new_group_state: GroupModel) -> Optional[GroupModel | HTTPError]:
-        """Changes the state of an individual light."""
+        """Changes the state of an individual light. Use x and y values to change color."""
         for group in self.groups:
             if group["id"] == id:
                 group["is_on"] = new_group_state.get("is_on", group["is_on"])
